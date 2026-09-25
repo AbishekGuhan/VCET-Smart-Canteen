@@ -67,13 +67,19 @@ const orderSchema = new mongoose.Schema(
 
     paymentMethod: {
       type: String,
-      enum: ['CASH_AT_CANTEEN'],
-      default: 'CASH_AT_CANTEEN',
+      enum: ['UPI'],
+      default: 'UPI',
+    },
+
+    transactionId: {
+      type: String,
+      trim: true,
+      default: '',
     },
 
     paymentStatus: {
       type: String,
-      enum: ['PENDING', 'PAID', 'FAILED'],
+      enum: ['PENDING', 'PENDING_VERIFICATION', 'VERIFIED', 'PAID', 'FAILED'],
       default: 'PENDING',
     },
 

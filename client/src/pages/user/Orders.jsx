@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { getOrders } from '../../services/orderService';
+import { useAuth } from '../../context/AuthContext';
 
 // ---------------------------------------------------------------------------
 // Status badge config (shared colour palette with OrderConfirmation)
@@ -24,11 +25,18 @@ const formatDate = (iso) => {
 // Route: /orders  —  ProtectedRoute (all authenticated roles)
 // ---------------------------------------------------------------------------
 const Orders = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [orders, setOrders]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
 
   useEffect(() => {
+    if (user?.role === 'ADMIN') {
+      navigate('/admin', { replace: true });
+      return;
+    }
+
     let cancelled = false;
 
     const fetchOrders = async () => {

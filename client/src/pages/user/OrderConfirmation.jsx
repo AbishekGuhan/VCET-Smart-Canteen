@@ -130,7 +130,7 @@ const OrderConfirmation = () => {
           <div className="flex justify-between">
             <span className="text-slate-400">Payment Method</span>
             <span className="text-slate-200 font-medium">
-              {order.paymentMethod === 'CASH_AT_CANTEEN' ? 'Cash at Canteen' : order.paymentMethod}
+              UPI / Online Payment
             </span>
           </div>
           <div className="flex justify-between items-center">
@@ -169,8 +169,8 @@ const OrderConfirmation = () => {
         </h3>
         <ul className="text-xs text-slate-400 space-y-1.5 leading-relaxed list-none">
           <li>• Visit the VCET canteen counter with your token <span className="text-amber-400 font-bold">{order.tokenNumber}</span>.</li>
-          <li>• Payment is collected in cash at the counter — no online payment needed.</li>
-          <li>• Your order will be ready when status changes to <span className="text-emerald-400 font-semibold">READY</span>.</li>
+          <li>• Your UPI payment reference is recorded and verified by canteen staff.</li>
+          <li>• Your meal will be ready when status changes to <span className="text-emerald-400 font-semibold">READY</span>.</li>
           <li>• Canteen hours: Monday–Saturday, 7:30 AM – 5:30 PM.</li>
         </ul>
       </div>

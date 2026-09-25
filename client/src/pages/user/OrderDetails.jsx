@@ -265,7 +265,7 @@ const OrderDetails = () => {
               <div className="flex justify-between">
                 <span className="text-slate-400">Payment Method</span>
                 <span className="text-slate-200">
-                  {order.paymentMethod === 'CASH_AT_CANTEEN' ? 'Cash at Canteen' : order.paymentMethod}
+                  UPI / Online Payment
                 </span>
               </div>
               <div className="flex justify-between items-center">

@@ -43,74 +43,86 @@ const Navbar = () => {
         </Link>
 
         {/* Navigation Links */}
-        <div className="flex items-center gap-4">
-          <Link
-            to="/menu"
-            className="text-sm font-semibold text-slate-300 hover:text-white transition-colors flex items-center gap-1.5"
-            id="nav-menu-link"
-          >
-            <span>🍱</span> Menu
-          </Link>
+        <div className="flex items-center gap-3 sm:gap-4">
+          {/* Admin Navigation */}
+          {isAuthenticated && user?.role === 'ADMIN' ? (
+            <div className="flex items-center gap-3 sm:gap-4">
+              <Link
+                to="/admin"
+                className="text-xs sm:text-sm font-bold text-red-400 hover:text-red-300 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30"
+                id="nav-admin-dashboard-link"
+              >
+                <span>🛡️</span> Admin Console
+              </Link>
+              <Link
+                to="/admin/inventory"
+                className="hidden sm:flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-300 hover:text-white transition-colors"
+                id="nav-admin-inventory-link"
+              >
+                <span>📦</span> Inventory
+              </Link>
+              <Link
+                to="/admin/sales"
+                className="hidden md:flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-300 hover:text-white transition-colors"
+                id="nav-admin-sales-link"
+              >
+                <span>📊</span> Sales
+              </Link>
 
-          {/* Cart Link with Live Item-Count Badge */}
-          <Link
-            to="/cart"
-            className="relative px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-amber-500/40 text-sm font-semibold text-slate-300 hover:text-white transition-all flex items-center gap-2"
-            id="nav-cart-link"
-          >
-            <span>🛒</span> Cart
-            {totalItemsCount > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-slate-950 font-extrabold text-[11px] leading-none animate-pulse">
-                {totalItemsCount}
-              </span>
-            )}
-          </Link>
+              {/* Admin Profile Badge */}
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800">
+                <div className="h-7 w-7 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center text-xs font-bold uppercase">
+                  A
+                </div>
+                <div className="text-left hidden sm:block">
+                  <p className="text-xs font-bold text-slate-200 leading-none">{user.name}</p>
+                  <span className="inline-block text-[10px] font-semibold border px-1.5 py-0.5 rounded mt-0.5 bg-red-500/10 text-red-400 border-red-500/30">
+                    ADMIN
+                  </span>
+                </div>
+              </div>
 
-          {/* Auth State & Nav Actions */}
-          {isAuthenticated && user ? (
-            <div className="flex items-center gap-3">
-              {user.role === 'ADMIN' ? (
-                <>
-                  <Link
-                    to="/admin"
-                    className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-red-400 hover:text-red-300 transition-colors"
-                    id="nav-admin-dashboard-link"
-                  >
-                    <span>🛡️</span> Admin
-                  </Link>
-                  <Link
-                    to="/admin/inventory"
-                    className="hidden md:flex items-center gap-1.5 text-sm font-semibold text-slate-300 hover:text-white transition-colors"
-                    id="nav-admin-inventory-link"
-                  >
-                    <span>📦</span> Inventory
-                  </Link>
-                  <Link
-                    to="/admin/sales"
-                    className="hidden md:flex items-center gap-1.5 text-sm font-semibold text-slate-300 hover:text-white transition-colors"
-                    id="nav-admin-sales-link"
-                  >
-                    <span>📊</span> Sales
-                  </Link>
-                </>
-              ) : (
-                <Link
-                  to="/dashboard"
-                  className="hidden sm:flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-white transition-colors"
-                  id="nav-user-dashboard-link"
-                >
-                  Dashboard
-                </Link>
-              )}
+              <button
+                onClick={handleLogout}
+                className="px-3.5 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-red-500/20 text-slate-300 hover:text-red-400 rounded-lg border border-slate-700 hover:border-red-500/40 transition-all"
+                id="logout-btn"
+              >
+                Logout
+              </button>
+            </div>
+          ) : isAuthenticated && user ? (
+            /* Student & Staff Navigation */
+            <div className="flex items-center gap-3 sm:gap-4">
+              <Link
+                to="/menu"
+                className="text-sm font-semibold text-slate-300 hover:text-white transition-colors flex items-center gap-1.5"
+                id="nav-menu-link"
+              >
+                <span>🍱</span> Menu
+              </Link>
+
+              <Link
+                to="/cart"
+                className="relative px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-amber-500/40 text-sm font-semibold text-slate-300 hover:text-white transition-all flex items-center gap-2"
+                id="nav-cart-link"
+              >
+                <span>🛒</span> Cart
+                {totalItemsCount > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-slate-950 font-extrabold text-[11px] leading-none animate-pulse">
+                    {totalItemsCount}
+                  </span>
+                )}
+              </Link>
 
               <Link
                 to="/orders"
-                className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-slate-300 hover:text-white transition-colors"
+                className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-300 hover:text-white transition-colors"
                 id="nav-orders-link"
               >
                 <span>🎟️</span> My Orders
               </Link>
-              
+
+              {/* Student Profile Badge */}
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800">
                 <div className="h-7 w-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center text-xs font-bold uppercase">
                   {user.name ? user.name.charAt(0) : 'U'}
@@ -132,17 +144,46 @@ const Navbar = () => {
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            /* Logged Out Navigation */
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Link
+                to="/menu"
+                className="text-sm font-semibold text-slate-300 hover:text-white transition-colors flex items-center gap-1.5"
+                id="nav-menu-link"
+              >
+                <span>🍱</span> Menu
+              </Link>
+
+              <Link
+                to="/cart"
+                className="relative px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-amber-500/40 text-sm font-semibold text-slate-300 hover:text-white transition-all flex items-center gap-2"
+                id="nav-cart-link"
+              >
+                <span>🛒</span>
+                {totalItemsCount > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-slate-950 font-extrabold text-[11px] leading-none">
+                    {totalItemsCount}
+                  </span>
+                )}
+              </Link>
+
               <Link
                 to="/login"
-                className="px-4 py-2 text-sm font-semibold text-slate-300 hover:text-white transition-colors"
+                className="px-3 py-1.5 text-xs sm:text-sm font-semibold text-slate-300 hover:text-white transition-colors"
                 id="nav-login-btn"
               >
-                Login
+                Student Login
+              </Link>
+              <Link
+                to="/admin/login"
+                className="px-3 py-1.5 text-xs sm:text-sm font-semibold text-red-400 hover:text-red-300 transition-colors hidden sm:inline-block border border-red-500/30 rounded-lg bg-red-500/10"
+                id="nav-admin-portal-btn"
+              >
+                🛡️ Admin Portal
               </Link>
               <Link
                 to="/register"
-                className="px-4 py-2 text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg shadow-md hover:shadow-amber-500/25 transition-all"
+                className="px-3.5 py-1.5 text-xs sm:text-sm font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg shadow-md hover:shadow-amber-500/25 transition-all"
                 id="nav-register-btn"
               >
                 Register
@@ -156,3 +197,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+

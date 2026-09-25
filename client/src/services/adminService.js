@@ -43,8 +43,20 @@ export const deleteInventory = async (id) => {
   return res.data;
 };
 
+// ── Admin Orders & UPI Verification ────────────────────────────────────────
+export const getAdminOrders = async () => {
+  const res = await axios.get('/api/admin/orders');
+  return res.data;
+};
+
+export const updateOrderStatus = async (id, statusData) => {
+  const res = await axios.patch(`/api/admin/orders/${id}/status`, statusData);
+  return res.data;
+};
+
 // ── Helper to fetch foods for inventory creation ───────────────────────────
 export const getFoodItems = async () => {
   const res = await axios.get('/api/food');
   return res.data;
 };
+

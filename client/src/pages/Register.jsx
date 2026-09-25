@@ -42,7 +42,7 @@ const Register = () => {
     setIsSubmitting(false);
 
     if (result.success) {
-      navigate('/dashboard', { replace: true });
+      navigate('/menu', { replace: true });
     } else {
       setFormError(result.error);
     }

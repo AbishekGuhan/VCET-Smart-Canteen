@@ -17,6 +17,7 @@ import OrderDetails from './pages/user/OrderDetails';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminInventory from './pages/AdminInventory';
 import AdminSales from './pages/AdminSales';
+import AdminLogin from './pages/AdminLogin';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
               <Route path="/menu" element={<Menu />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/register" element={<Register />} />
 
               {/* ── Protected Admin Routes ── */}

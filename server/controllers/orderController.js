@@ -39,7 +39,7 @@ const generateUniqueToken = async () => {
 // ---------------------------------------------------------------------------
 const createOrder = async (req, res) => {
   try {
-    const { items } = req.body;
+    const { items, transactionId, paymentMethod } = req.body;
 
     // ── 1. Verify authenticated user ────────────────────────────────────────
     // req.user is set by the protect middleware — never trust user ID from body
@@ -80,7 +80,6 @@ const createOrder = async (req, res) => {
       const { foodItem: foodId, quantity } = items[i];
       const qty = parseInt(quantity, 10);
 
-      // ── 6. Verify food exists ──────────────────────────────────────────────
       const food = await FoodItem.findById(foodId);
       if (!food) {
         return res.status(404).json({
@@ -88,50 +87,43 @@ const createOrder = async (req, res) => {
         });
       }
 
-      // ── 7. Verify food is active (isAvailable = true means it's on the menu) ─
-      // FoodItem schema uses `isAvailable` — no separate `isActive` field exists
       if (!food.isAvailable) {
         return res.status(400).json({
           message: `"${food.name}" is currently not available. Please remove it from your cart.`,
         });
       }
 
-      // ── 8. Verify food is available (same flag in this schema) ──────────────
-      // (Both "active" and "available" map to food.isAvailable in this schema.
-      //  If a separate isActive field is added in future, add check here.)
-
-      // ── 9. Read price directly from MongoDB — NEVER from frontend ───────────
       const priceFromDB = food.price;
-
-      // ── 10 & 11. Calculate subtotal and accumulate totalAmount ───────────────
       const subtotal = parseFloat((priceFromDB * qty).toFixed(2));
       totalAmount += subtotal;
 
-      // ── 12 & 13. Store snapshot of name and price at order time ─────────────
       orderItems.push({
         foodItem: food._id,
-        name: food.name,       // snapshot — preserved even if food name changes
+        name: food.name,
         quantity: qty,
-        price: priceFromDB,    // snapshot — preserved even if food price changes
+        price: priceFromDB,
         subtotal,
       });
     }
 
-    // Round totalAmount to avoid floating point drift
     totalAmount = parseFloat(totalAmount.toFixed(2));
 
     // ── 14. Generate unique token ────────────────────────────────────────────
     const tokenNumber = await generateUniqueToken();
 
+    const selectedPaymentMethod = 'UPI';
+    const initialPaymentStatus = 'PENDING_VERIFICATION';
+
     // ── 15. Create the order using req.user._id ──────────────────────────────
     const order = await Order.create({
-      user: req.user._id,        // from protect middleware — not from request body
+      user: req.user._id,
       items: orderItems,
       totalAmount,
       tokenNumber,
-      orderStatus: 'PLACED',     // always starts as PLACED
-      paymentMethod: 'CASH_AT_CANTEEN',
-      paymentStatus: 'PENDING',
+      orderStatus: 'PLACED',
+      paymentMethod: selectedPaymentMethod,
+      transactionId: transactionId ? transactionId.trim() : '',
+      paymentStatus: initialPaymentStatus,
       orderDate: new Date(),
     });
 
@@ -214,8 +206,77 @@ const getOrderById = async (req, res) => {
   }
 };
 
+// ---------------------------------------------------------------------------
+// @desc    Get all orders with student details (Admin only)
+// @route   GET /api/admin/orders
+// @access  Private / Admin
+// ---------------------------------------------------------------------------
+const getAllOrdersForAdmin = async (req, res) => {
+  try {
+    const orders = await Order.find()
+      .sort({ createdAt: -1 })
+      .populate('user', 'name email role department registerNumber phone');
+
+    return res.status(200).json({
+      count: orders.length,
+      orders,
+    });
+  } catch (error) {
+    console.error('Get admin orders error:', error.message);
+    return res.status(500).json({
+      message: 'Server error while fetching all orders',
+      error: error.message,
+    });
+  }
+};
+
+// ---------------------------------------------------------------------------
+// @desc    Update order status / payment status (Admin only)
+// @route   PATCH /api/admin/orders/:id/status
+// @access  Private / Admin
+// ---------------------------------------------------------------------------
+const updateOrderStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { orderStatus, paymentStatus } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid order ID format' });
+    }
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    if (orderStatus) {
+      order.orderStatus = orderStatus;
+    }
+    if (paymentStatus) {
+      order.paymentStatus = paymentStatus;
+    }
+
+    await order.save();
+    const updated = await Order.findById(id).populate('user', 'name email role department registerNumber phone');
+
+    return res.status(200).json({
+      message: 'Order updated successfully',
+      order: updated,
+    });
+  } catch (error) {
+    console.error('Update order status error:', error.message);
+    return res.status(500).json({
+      message: 'Server error while updating order',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createOrder,
   getUserOrders,
   getOrderById,
+  getAllOrdersForAdmin,
+  updateOrderStatus,
 };
+

@@ -7,15 +7,17 @@ import axios from 'axios';
 
 /**
  * POST /api/orders
- * Sends ONLY { items: [{ foodItem, quantity }] }.
+ * Sends { items: [{ foodItem, quantity }], transactionId, paymentMethod }.
  * Backend calculates all prices — never send price/subtotal/totalAmount.
  */
-export const createOrder = async (cartItems) => {
+export const createOrder = async (cartItems, paymentData = {}) => {
   const payload = {
     items: cartItems.map((item) => ({
       foodItem: item._id,
       quantity: item.quantity,
     })),
+    transactionId: paymentData.transactionId || '',
+    paymentMethod: paymentData.paymentMethod || 'UPI',
   };
   const res = await axios.post('/api/orders', payload);
   return res.data; // { message, order }

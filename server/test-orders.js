@@ -159,8 +159,8 @@ async function runOrderTests() {
 
     // SECURITY: Backend must ignore any frontend-supplied price
     check('orderStatus = PLACED',           order.orderStatus === 'PLACED', order.orderStatus);
-    check('paymentMethod = CASH_AT_CANTEEN', order.paymentMethod === 'CASH_AT_CANTEEN', order.paymentMethod);
-    check('paymentStatus = PENDING',        order.paymentStatus === 'PENDING', order.paymentStatus);
+    check('paymentMethod = UPI',            order.paymentMethod === 'UPI', order.paymentMethod);
+    check('paymentStatus = PENDING_VERIFICATION', order.paymentStatus === 'PENDING_VERIFICATION', order.paymentStatus);
     check('tokenNumber starts with VCET-',  order.tokenNumber.startsWith('VCET-'), order.tokenNumber);
     check('totalAmount = 90 (45 × 2)',      order.totalAmount === 90, order.totalAmount);
     check('item price = 45 (from DB)',       order.items[0].price === 45, order.items[0].price);

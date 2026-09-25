@@ -9,11 +9,11 @@ const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
 
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = location.state?.from?.pathname || '/dashboard';
+  const from = location.state?.from?.pathname;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,7 +29,13 @@ const Login = () => {
     setIsSubmitting(false);
 
     if (result.success) {
-      navigate(from, { replace: true });
+      // Strictly prevent Admin accounts from logging in through the Student Portal
+      if (result.user?.role === 'ADMIN') {
+        logout();
+        setFormError('Access Denied: Administrator credentials cannot be used to log in through the Student portal. Please use the dedicated Admin Portal.');
+        return;
+      }
+      navigate(from || '/menu', { replace: true });
     } else {
       setFormError(result.error);
     }
@@ -40,31 +46,46 @@ const Login = () => {
       <div className="max-w-md w-full space-y-8 bg-slate-950 p-8 rounded-2xl border border-slate-800 shadow-2xl">
         {/* Header */}
         <div className="text-center">
-          <div className="inline-flex h-12 w-12 rounded-xl bg-amber-500/10 text-amber-400 items-center justify-center font-bold text-2xl mb-3 border border-amber-500/20">
-            🔑
+          <div className="inline-flex h-14 w-14 rounded-2xl bg-amber-500/10 text-amber-400 items-center justify-center font-bold text-2xl mb-3 border border-amber-500/20 shadow-inner">
+            🎓
+          </div>
+          <div className="inline-block px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-semibold tracking-wide border border-amber-500/20 mb-2">
+            STUDENT & STAFF PORTAL
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Sign in to VCET Portal
+            VCET Smart Canteen
           </h2>
-          <p className="mt-2 text-xs sm:text-sm text-slate-400">
-            Velammal College of Engineering & Technology Smart Canteen
+          <p className="mt-1.5 text-xs sm:text-sm text-slate-400">
+            Sign in to order food, track live pickup tokens, and skip the line
           </p>
         </div>
 
         {/* Error Alert */}
         {formError && (
-          <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold flex items-center gap-2">
-            <span className="text-sm">⚠️</span>
-            <span>{formError}</span>
+          <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold space-y-2">
+            <div className="flex items-start gap-2.5">
+              <span className="text-base leading-none">⚠️</span>
+              <span className="leading-relaxed">{formError}</span>
+            </div>
+            {formError.includes('Admin') && (
+              <div className="pt-1">
+                <Link
+                  to="/admin/login"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500/20 hover:bg-red-500 text-red-300 hover:text-white rounded-lg text-xs font-bold transition-all border border-red-500/40"
+                >
+                  <span>🛡️</span> Switch to Admin Portal Login →
+                </Link>
+              </div>
+            )}
           </div>
         )}
 
         {/* Form */}
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                Email Address
+                College Email Address
               </label>
               <input
                 id="email"
@@ -72,7 +93,7 @@ const Login = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="student@vcet.ac.in"
+                placeholder="student@vcet.edu"
                 className="w-full px-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-sm transition-all"
               />
             </div>
@@ -89,12 +110,12 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-sm transition-all pr-10"
+                  className="w-full px-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-sm transition-all pr-12"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-xs font-medium"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-xs font-medium px-1 py-1"
                 >
                   {showPassword ? 'Hide' : 'Show'}
                 </button>
@@ -102,32 +123,38 @@ const Login = () => {
             </div>
           </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full py-3.5 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all text-sm flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <>
-                  <span className="h-4 w-4 rounded-full border-2 border-slate-950 border-t-transparent animate-spin"></span>
-                  Signing In...
-                </>
-              ) : (
-                'Sign In'
-              )}
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full py-3.5 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-lg shadow-amber-500/20 text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {isSubmitting ? (
+              <>
+                <div className="h-4 w-4 rounded-full border-2 border-slate-950/20 border-t-slate-950 animate-spin" />
+                <span>Signing in…</span>
+              </>
+            ) : (
+              <>
+                <span>🚀</span>
+                <span>Sign In & Order Food</span>
+              </>
+            )}
+          </button>
         </form>
 
-        {/* Footer Link */}
-        <div className="text-center pt-2">
-          <p className="text-xs text-slate-400">
-            Don't have an account?{' '}
-            <Link to="/register" className="font-semibold text-amber-400 hover:text-amber-300">
-              Register here
+        {/* Links */}
+        <div className="space-y-3 pt-2 text-center border-t border-slate-900 text-xs text-slate-400">
+          <p>
+            Don't have an account yet?{' '}
+            <Link to="/register" className="text-amber-400 hover:text-amber-300 font-bold transition-colors">
+              Register here →
             </Link>
           </p>
+          <div className="pt-2 border-t border-slate-900/60">
+            <Link to="/admin/login" className="inline-flex items-center gap-1.5 text-red-400/80 hover:text-red-400 font-semibold transition-colors">
+              <span>🛡️</span> Canteen Admin Portal Login
+            </Link>
+          </div>
         </div>
       </div>
     </div>
@@ -135,3 +162,4 @@ const Login = () => {
 };
 
 export default Login;
+

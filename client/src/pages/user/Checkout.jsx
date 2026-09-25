@@ -13,11 +13,23 @@ const Checkout = () => {
   const { cartItems, clearCart, total, totalItemsCount } = useCart();
   const navigate = useNavigate();
 
+  const paymentMethod = 'UPI';
+  const [transactionId, setTransactionId] = useState('');
+  const [copiedPhone, setCopiedPhone] = useState(false);
   const [isPlacing, setIsPlacing] = useState(false);
   const [apiError, setApiError] = useState('');
 
+  const canteenPhone = '+91 9994994991';
+  const rawPhone = '9994994991';
+
   const defaultImage =
     'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80';
+
+  const handleCopyPhone = () => {
+    navigator.clipboard.writeText(rawPhone);
+    setCopiedPhone(true);
+    setTimeout(() => setCopiedPhone(false), 2500);
+  };
 
   // ── Empty Cart Guard ──────────────────────────────────────────────────────
   if (cartItems.length === 0) {
@@ -42,93 +54,194 @@ const Checkout = () => {
 
   // ── Place Order Handler ───────────────────────────────────────────────────
   const handlePlaceOrder = async () => {
-    if (isPlacing) return; // prevent duplicate submissions
+    if (isPlacing) return;
 
     setApiError('');
+
+    if (!transactionId || transactionId.trim().length < 4) {
+      setApiError('Please enter your 12-digit UPI Transaction / UTR ID after making the payment.');
+      return;
+    }
+
     setIsPlacing(true);
 
     try {
-      // createOrder sends only { items: [{ foodItem, quantity }] }
-      // Backend calculates all prices — never send price/subtotal/totalAmount
-      const data = await createOrder(cartItems);
+      const data = await createOrder(cartItems, {
+        transactionId: transactionId.trim(),
+        paymentMethod: 'UPI',
+      });
       const createdOrder = data.order;
 
-      // Clear cart AFTER successful order creation
       clearCart();
-
-      // Navigate to order confirmation with the real order ID from backend
       navigate(`/order-confirmation/${createdOrder._id}`);
     } catch (err) {
       const status = err.response?.status;
       const serverMsg = err.response?.data?.message;
 
-      // Map specific server errors to friendly messages
       if (status === 401) {
         setApiError('Your session has expired. Please log in again.');
       } else if (status === 400) {
-        // e.g. "inactive food", "unavailable item", "invalid quantity"
         setApiError(serverMsg || 'One or more items in your cart are unavailable. Please review your cart.');
       } else if (status === 404) {
         setApiError(serverMsg || 'A food item in your cart no longer exists. Please update your cart.');
       } else if (!err.response) {
-        // Network error — no response at all
         setApiError('Network error — please check your internet connection and try again.');
       } else {
-        setApiError('Something went wrong while placing your order. Please try again.');
+        setApiError(serverMsg || 'Something went wrong while placing your order. Please try again.');
       }
     } finally {
       setIsPlacing(false);
     }
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-
       {/* ── Page Header ── */}
       <div className="p-6 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950/40 border border-slate-800 shadow-xl mb-8">
         <div className="flex items-center gap-3 mb-1">
           <span className="text-2xl">🧾</span>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Checkout
+            Checkout & Online Payment
           </h1>
         </div>
         <p className="text-slate-400 text-xs sm:text-sm">
-          Review your order and confirm — payment is collected at the canteen counter.
+          Pay seamlessly via UPI / QR — order instantly verified and prepared with pickup token.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-        {/* ── LEFT: Customer Info + Order Items ── */}
+        {/* ── LEFT: Customer Info + Order Items + UPI Payment Instructions ── */}
         <div className="lg:col-span-2 space-y-6">
 
-          {/* Customer Details Card */}
+          {/* Student Profile Card */}
           <div className="p-6 rounded-2xl bg-slate-950 border border-slate-800 shadow-lg">
             <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2 pb-3 border-b border-slate-800">
-              <span>👤</span> Customer Details
+              <span>👤</span> Student Details
             </h2>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between py-1.5 border-b border-slate-900">
-                <span className="text-slate-400">Name</span>
-                <span className="font-semibold text-slate-200">{user?.name}</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-xs text-slate-500 uppercase font-semibold block mb-0.5">Name</span>
+                <span className="font-bold text-slate-200">{user?.name}</span>
               </div>
-              <div className="flex justify-between py-1.5 border-b border-slate-900">
-                <span className="text-slate-400">Email</span>
-                <span className="font-semibold text-slate-200">{user?.email}</span>
+              <div>
+                <span className="text-xs text-slate-500 uppercase font-semibold block mb-0.5">Email</span>
+                <span className="font-medium text-slate-300">{user?.email}</span>
               </div>
-              {user?.phone && (
-                <div className="flex justify-between py-1.5 border-b border-slate-900">
-                  <span className="text-slate-400">Phone</span>
-                  <span className="font-semibold text-slate-200">{user.phone}</span>
+              {user?.registerNumber && (
+                <div>
+                  <span className="text-xs text-slate-500 uppercase font-semibold block mb-0.5">Register / Roll No.</span>
+                  <span className="font-bold text-amber-400 font-mono">{user.registerNumber}</span>
                 </div>
               )}
-              <div className="flex justify-between py-1.5">
-                <span className="text-slate-400">Role</span>
-                <span className="font-semibold text-amber-400 uppercase text-xs">{user?.role}</span>
-              </div>
+              {user?.department && (
+                <div>
+                  <span className="text-xs text-slate-500 uppercase font-semibold block mb-0.5">Department</span>
+                  <span className="font-medium text-slate-300">{user.department}</span>
+                </div>
+              )}
+              {user?.phone && (
+                <div>
+                  <span className="text-xs text-slate-500 uppercase font-semibold block mb-0.5">Phone Number</span>
+                  <span className="font-medium text-slate-300">{user.phone}</span>
+                </div>
+              )}
             </div>
           </div>
+
+          {/* College Canteen UPI Payment Banner */}
+          {paymentMethod === 'UPI' && (
+            <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/30 border-2 border-amber-500/40 shadow-xl space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                <div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-bold uppercase tracking-wider mb-2 border border-amber-500/30">
+                    <span>⚡</span> Official Canteen UPI Account
+                  </div>
+                  <h3 className="text-lg font-black text-white">VCET Canteen Payment Details</h3>
+                  <p className="text-xs text-slate-400">Pay using Google Pay, PhonePe, Paytm, or any UPI App</p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 bg-slate-800 text-slate-300 text-xs font-bold rounded-lg border border-slate-700">GPay</span>
+                  <span className="px-2.5 py-1 bg-purple-900/40 text-purple-300 text-xs font-bold rounded-lg border border-purple-700/40">PhonePe</span>
+                  <span className="px-2.5 py-1 bg-blue-900/40 text-blue-300 text-xs font-bold rounded-lg border border-blue-700/40">Paytm</span>
+                  <span className="px-2.5 py-1 bg-emerald-900/40 text-emerald-300 text-xs font-bold rounded-lg border border-emerald-700/40">BHIM</span>
+                </div>
+              </div>
+
+              {/* Payment Phone Number Highlight Card */}
+              <div className="p-4 rounded-xl bg-slate-900/90 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <span className="text-xs text-slate-400 block mb-0.5">VCET Canteen Payment Mobile / UPI Number:</span>
+                  <div className="text-xl sm:text-2xl font-black text-amber-400 font-mono tracking-wider">
+                    {canteenPhone}
+                  </div>
+                  <span className="text-[11px] text-slate-500">Beneficiary: Velammal College Canteen Counter</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleCopyPhone}
+                  className="px-4 py-2.5 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-slate-950 font-bold rounded-xl border border-amber-500/40 text-xs transition-all flex items-center justify-center gap-1.5"
+                >
+                  <span>{copiedPhone ? '✅' : '📋'}</span>
+                  <span>{copiedPhone ? 'Copied to Clipboard!' : 'Copy Mobile Number'}</span>
+                </button>
+              </div>
+
+              {/* Step-by-Step Payment Instructions */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1">
+                  <div className="font-bold text-amber-400 flex items-center gap-1.5">
+                    <span className="h-5 w-5 rounded-full bg-amber-500/20 flex items-center justify-center text-[10px]">1</span>
+                    <span>Open Payment App</span>
+                  </div>
+                  <p className="text-slate-400 text-[11px] leading-relaxed">
+                    Open GPay, PhonePe, or Paytm and send <strong className="text-white">₹{total}</strong> to <strong className="text-amber-300 font-mono">{rawPhone}</strong>.
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1">
+                  <div className="font-bold text-amber-400 flex items-center gap-1.5">
+                    <span className="h-5 w-5 rounded-full bg-amber-500/20 flex items-center justify-center text-[10px]">2</span>
+                    <span>Get Transaction ID</span>
+                  </div>
+                  <p className="text-slate-400 text-[11px] leading-relaxed">
+                    After paying, copy the <strong className="text-white">12-digit UPI Ref / UTR / Transaction ID</strong> from payment receipt.
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1">
+                  <div className="font-bold text-amber-400 flex items-center gap-1.5">
+                    <span className="h-5 w-5 rounded-full bg-amber-500/20 flex items-center justify-center text-[10px]">3</span>
+                    <span>Paste & Confirm</span>
+                  </div>
+                  <p className="text-slate-400 text-[11px] leading-relaxed">
+                    Paste the Transaction ID in the input box below and place your order to get your pickup token.
+                  </p>
+                </div>
+              </div>
+
+              {/* Transaction ID Input Field */}
+              <div className="pt-2">
+                <label className="block text-xs font-bold text-amber-400 uppercase tracking-wider mb-2">
+                  Enter UPI Transaction ID / UTR Number *
+                </label>
+                <input
+                  id="transaction-id"
+                  type="text"
+                  required
+                  value={transactionId}
+                  onChange={(e) => setTransactionId(e.target.value)}
+                  placeholder="e.g. 428910293812 or UPI Ref / UTR ID"
+                  className="w-full px-4 py-3 bg-slate-900 border-2 border-amber-500/40 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/30 text-sm font-mono transition-all"
+                />
+                <p className="text-[11px] text-slate-400 mt-1.5 flex items-center gap-1">
+                  <span>ℹ️</span>
+                  <span>This ID will be instantly verified by the Canteen Admin for your order preparation.</span>
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Order Items Table */}
           <div className="p-6 rounded-2xl bg-slate-950 border border-slate-800 shadow-lg">
@@ -167,30 +280,21 @@ const Checkout = () => {
                 );
               })}
             </div>
-
-            {/* Security note */}
-            <div className="mt-4 p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-xs text-slate-500 flex items-start gap-2">
-              <span className="mt-0.5">🔒</span>
-              <span>
-                Cart prices are estimates only. The final order total is securely calculated from the
-                database at the time of order placement.
-              </span>
-            </div>
           </div>
         </div>
 
-        {/* ── RIGHT: Payment + Place Order Sidebar ── */}
+        {/* ── RIGHT: Payment Method Selector + Order Total ── */}
         <div>
           <div className="p-6 rounded-2xl bg-slate-950 border border-slate-800 shadow-xl space-y-6 sticky top-24">
 
             {/* Order Summary */}
             <div>
               <h2 className="text-base font-bold text-white pb-3 border-b border-slate-800 mb-4 flex items-center gap-2">
-                <span>📋</span> Order Summary
+                <span>📋</span> Bill Summary
               </h2>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between text-slate-400">
-                  <span>Items ({totalItemsCount})</span>
+                  <span>Items Total ({totalItemsCount})</span>
                   <span className="font-semibold text-slate-200">₹{total}</span>
                 </div>
                 <div className="flex justify-between text-slate-400">
@@ -198,36 +302,32 @@ const Checkout = () => {
                   <span className="font-semibold text-emerald-400">FREE (₹0)</span>
                 </div>
                 <div className="pt-3 border-t border-slate-800 flex justify-between items-center">
-                  <span className="font-bold text-white text-sm">Estimated Total</span>
-                  <span className="font-extrabold text-amber-400 text-2xl">₹{total}</span>
+                  <span className="font-bold text-white text-sm">Grand Total</span>
+                  <span className="font-extrabold text-amber-400 text-3xl font-mono">₹{total}</span>
                 </div>
               </div>
-              <p className="text-[10px] text-slate-600 mt-2 leading-relaxed">
-                * Final amount confirmed by the server at order time.
-              </p>
             </div>
 
-            {/* Payment Method */}
+            {/* Payment Method Badge */}
             <div>
-              <h2 className="text-base font-bold text-white pb-3 border-b border-slate-800 mb-4 flex items-center gap-2">
+              <h2 className="text-base font-bold text-white pb-3 border-b border-slate-800 mb-3 flex items-center gap-2">
                 <span>💳</span> Payment Method
               </h2>
-              <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/25 flex items-start gap-3">
-                <div className="h-9 w-9 rounded-xl bg-amber-500/10 flex items-center justify-center text-xl shrink-0">
-                  🏪
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-amber-400">Cash at Canteen</p>
-                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                    Pay in cash directly at the VCET canteen counter when you collect your order.
-                    No online payment required.
+              <div className="p-3.5 rounded-xl border border-amber-500/50 bg-amber-500/10 flex items-start gap-3">
+                <span className="text-xl mt-0.5">📱</span>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-bold text-amber-400">
+                      UPI / Online Payment
+                    </p>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold uppercase">
+                      Instant Token
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Pay to <span className="text-amber-300 font-mono">{canteenPhone}</span> & enter Transaction ID
                   </p>
                 </div>
-              </div>
-              {/* Checkmark confirmation */}
-              <div className="mt-3 flex items-center gap-2 text-xs text-emerald-400">
-                <span>✅</span>
-                <span>Selected: Cash at Canteen</span>
               </div>
             </div>
 
@@ -235,10 +335,25 @@ const Checkout = () => {
             {apiError && (
               <div
                 role="alert"
-                className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs leading-relaxed flex items-start gap-2"
+                className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs leading-relaxed space-y-2"
               >
-                <span className="mt-0.5 shrink-0">⚠️</span>
-                <span>{apiError}</span>
+                <div className="flex items-start gap-2">
+                  <span className="mt-0.5 shrink-0">⚠️</span>
+                  <span>{apiError}</span>
+                </div>
+                {apiError.toLowerCase().includes('not found') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearCart();
+                      navigate('/menu');
+                    }}
+                    className="w-full mt-2 py-2 px-3 bg-red-500/20 hover:bg-red-500/30 text-red-300 font-bold rounded-lg border border-red-500/40 text-xs transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <span>🗑️</span>
+                    <span>Clear Stale Cart & Pick Fresh Items</span>
+                  </button>
+                )}
               </div>
             )}
 
@@ -247,7 +362,7 @@ const Checkout = () => {
               id="place-order-btn"
               onClick={handlePlaceOrder}
               disabled={isPlacing}
-              className={`w-full py-3.5 px-4 font-bold rounded-xl shadow-lg text-sm text-center transition-all flex items-center justify-center gap-2 ${
+              className={`w-full py-4 px-4 font-bold rounded-xl shadow-lg text-sm text-center transition-all flex items-center justify-center gap-2 ${
                 isPlacing
                   ? 'bg-amber-500/50 text-slate-950/60 cursor-not-allowed shadow-none'
                   : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/25 hover:shadow-amber-500/40'
@@ -256,12 +371,12 @@ const Checkout = () => {
               {isPlacing ? (
                 <>
                   <span className="h-4 w-4 rounded-full border-2 border-slate-950/30 border-t-slate-950 animate-spin" />
-                  Placing Order…
+                  Processing Order…
                 </>
               ) : (
                 <>
                   <span>🎟️</span>
-                  Place Order
+                  <span>Confirm & Generate Pickup Token</span>
                 </>
               )}
             </button>
