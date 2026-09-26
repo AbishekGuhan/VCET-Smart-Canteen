@@ -67,7 +67,7 @@ const orderSchema = new mongoose.Schema(
 
     paymentMethod: {
       type: String,
-      enum: ['UPI'],
+      enum: ['UPI', 'CASH_AT_CANTEEN'],
       default: 'UPI',
     },
 
