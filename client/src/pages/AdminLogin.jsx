@@ -80,7 +80,7 @@ const AdminLogin = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="vcetadmin@vcet.edu"
+                placeholder="Enter administrator email"
                 className="w-full px-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-sm transition-all"
               />
             </div>
